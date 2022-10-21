@@ -4,9 +4,10 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'package:musify/API/musify.dart';
 import 'package:musify/customWidgets/song_bar.dart';
 import 'package:musify/style/appColors.dart';
+import 'package:musify/style/appTheme.dart';
 
 class UserLikedSongs extends StatefulWidget {
-  const UserLikedSongs({Key? key}) : super(key: key);
+  const UserLikedSongs({super.key});
 
   @override
   State<UserLikedSongs> createState() => _UserLikedSongsState();
@@ -45,21 +46,12 @@ class _UserLikedSongsState extends State<UserLikedSongs> {
                   height: 200,
                   width: 200,
                   child: Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    color: Colors.transparent,
                     child: Container(
                       width: 200,
                       height: 200,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(10),
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color.fromARGB(30, 255, 255, 255),
-                            Color.fromARGB(30, 233, 233, 233),
-                          ],
-                        ),
+                        color: Theme.of(context).backgroundColor.withAlpha(30),
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -110,18 +102,15 @@ class _UserLikedSongsState extends State<UserLikedSongs> {
                           setActivePlaylist(userLikedSongsList),
                           Navigator.pop(context, false)
                         },
-                        style: ElevatedButton.styleFrom(
-                          primary: accent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                        style: ButtonStyle(
+                          backgroundColor:
+                              MaterialStateProperty.all<Color>(accent),
                         ),
                         child: Text(
                           AppLocalizations.of(context)!.playAll.toUpperCase(),
                           style: TextStyle(
-                              color: accent != const Color(0xFFFFFFFF)
-                                  ? Colors.white
-                                  : Colors.black),
+                            color: isAccentWhite(),
+                          ),
                         ),
                       ),
                     ],

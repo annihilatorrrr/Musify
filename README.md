@@ -1,10 +1,13 @@
 <p align="center">
- <img width="250px" src="https://github.com/gokadzev/Musify/raw/master/android/app/src/main/res/drawable-xxhdpi/ic_launcher_foreground.png" align="center" alt="GitHub Readme Stats" />
+ <img width="150px" src="https://github.com/gokadzev/Musify/raw/master/android/app/src/main/res/mipmap-xxxhdpi/launcher_icon.png" align="center" alt="GitHub Readme Stats" />
  <h2 align="center"><b>Musify</b></h2>
  <p align="center"><b>Music Streaming and Downloading app made in Flutter!</b></p>
+ <p align="center">
+<a href="https://github.com/gokadzev/Musify/releases"><img alt="GitHub release" src="https://img.shields.io/github/v/release/gokadzev/Musify"/></a> <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/gokadzev/Musify?color=blue"/></a>
+</p>
 </p>
 
----
+
 
   <h3 align="center">Features</h3>
   <p align="center">
@@ -14,6 +17,7 @@
     Play Local / Downloaded Songs Support :open_file_folder: <br>
     High Quality mp3 / m4a / flac Format :fire:<br>
     Lyrics Support :pencil:<br>
+    SponsorBlock Support :scissors: <br>
     No Ads :no_entry_sign:<br>
     No Subscriptions :dollar:<br> 
     12 Supported Languages :us:<br>
@@ -38,7 +42,10 @@
 
 ---
   <h3 align="center">Credits</h3>
-   <p align="center" ><a href="https://github.com/Harsh-23/Musify">https://github.com/Harsh-23/Musify</a></p>
+   <p align="center">
+   <b>Initial code (now code is fully rebased/changed), App name and App logo (which is remade as well):<b><br>
+   <a href="https://github.com/Harsh-23/Musify">https://github.com/Harsh-23/Musify</a>
+   </p>
    
 ---
 <h3 align="center">Do you like project?</h3>

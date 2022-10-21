@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:musify/API/musify.dart';
 import 'package:musify/customWidgets/spinner.dart';
+import 'package:musify/helper/flutter_toast.dart';
 import 'package:musify/style/appColors.dart';
+import 'package:musify/style/appTheme.dart';
 import 'package:musify/ui/playlistsPage.dart';
 
 class UserPlaylistsPage extends StatefulWidget {
-  const UserPlaylistsPage({Key? key}) : super(key: key);
+  const UserPlaylistsPage({super.key});
 
   @override
   State<UserPlaylistsPage> createState() => _UserPlaylistsPageState();
@@ -40,15 +42,17 @@ class _UserPlaylistsPageState extends State<UserPlaylistsPage> {
           showDialog(
             context: context,
             builder: (BuildContext context) {
-              String id = '';
+              var id = '';
               return AlertDialog(
-                backgroundColor: accent,
+                backgroundColor: Theme.of(context).splashColor,
                 content: Stack(
                   children: <Widget>[
                     TextField(
                       decoration: InputDecoration(
                         hintText:
                             AppLocalizations.of(context)!.youtubePlaylistID,
+                        hintStyle:
+                            TextStyle(color: Theme.of(context).hintColor),
                       ),
                       onChanged: (value) {
                         setState(() {
@@ -65,7 +69,7 @@ class _UserPlaylistsPageState extends State<UserPlaylistsPage> {
                       style: const TextStyle(color: Colors.black),
                     ),
                     onPressed: () {
-                      addUserPlaylist(id);
+                      showToast(addUserPlaylist(id, context));
                       setState(() {
                         Navigator.pop(context);
                       });
@@ -79,8 +83,7 @@ class _UserPlaylistsPageState extends State<UserPlaylistsPage> {
         backgroundColor: accent,
         child: Icon(
           Icons.add,
-          color:
-              accent != const Color(0xFFFFFFFF) ? Colors.white : Colors.black,
+          color: isAccentWhite(),
         ),
       ),
       body: SingleChildScrollView(

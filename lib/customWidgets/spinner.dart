@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:musify/style/appColors.dart';
+import 'package:musify/style/appTheme.dart';
 
 class Spinner extends StatelessWidget {
-  const Spinner({Key? key}) : super(key: key);
+  const Spinner({super.key});
 
   @override
   Widget build(BuildContext context) {

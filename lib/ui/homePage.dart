@@ -6,7 +6,7 @@ import 'package:musify/API/musify.dart';
 import 'package:musify/customWidgets/delayed_display.dart';
 import 'package:musify/customWidgets/song_bar.dart';
 import 'package:musify/customWidgets/spinner.dart';
-import 'package:musify/style/appColors.dart';
+import 'package:musify/style/appTheme.dart';
 import 'package:musify/ui/playlistPage.dart';
 
 class HomePage extends StatefulWidget {
@@ -100,19 +100,20 @@ class _HomePageState extends State<HomePage> {
                   );
                 }
                 if (data.hasError) {
-                  // print(data.error);
                   return Center(
-                      child: Text(
-                    'Error!',
-                    style: TextStyle(color: accent, fontSize: 18),
-                  ));
+                    child: Text(
+                      'Error!',
+                      style: TextStyle(color: accent, fontSize: 18),
+                    ),
+                  );
                 }
                 if (!data.hasData) {
                   return Center(
-                      child: Text(
-                    'Nothing Found!',
-                    style: TextStyle(color: accent, fontSize: 18),
-                  ));
+                    child: Text(
+                      'Nothing Found!',
+                      style: TextStyle(color: accent, fontSize: 18),
+                    ),
+                  );
                 }
                 return Wrap(
                   children: <Widget>[
@@ -171,7 +172,7 @@ class CubeContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Size size = MediaQuery.of(context).size;
+    final size = MediaQuery.of(context).size;
     return DelayedDisplay(
       delay: const Duration(milliseconds: 200),
       fadingDuration: const Duration(milliseconds: 400),
@@ -194,9 +195,6 @@ class CubeContainer extends StatelessWidget {
               height: size.height / 4.15,
               width: size.width / 1.9,
               child: Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
                 color: Colors.transparent,
                 child: CachedNetworkImage(
                   imageUrl: image,
@@ -212,12 +210,7 @@ class CubeContainer extends StatelessWidget {
                   errorWidget: (context, url, error) => DecoratedBox(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color.fromARGB(30, 255, 255, 255),
-                          Color.fromARGB(30, 233, 233, 233),
-                        ],
-                      ),
+                      color: const Color.fromARGB(30, 255, 255, 255),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,

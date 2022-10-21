@@ -5,7 +5,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'package:musify/API/musify.dart';
 import 'package:musify/customWidgets/delayed_display.dart';
 import 'package:musify/customWidgets/spinner.dart';
-import 'package:musify/style/appColors.dart';
+import 'package:musify/style/appTheme.dart';
 import 'package:musify/ui/playlistPage.dart';
 
 class PlaylistsPage extends StatefulWidget {
@@ -20,11 +20,6 @@ class _PlaylistsPageState extends State<PlaylistsPage> {
 
   Future<void> search() async {
     _searchQuery = _searchBar.text;
-    if (_searchQuery.isEmpty) {
-      setState(() {});
-      return;
-    }
-
     setState(() {});
   }
 
@@ -48,7 +43,11 @@ class _PlaylistsPageState extends State<PlaylistsPage> {
           children: <Widget>[
             Padding(
               padding: const EdgeInsets.only(
-                  top: 12, bottom: 20, left: 12, right: 12),
+                top: 12,
+                bottom: 20,
+                left: 12,
+                right: 12,
+              ),
               child: TextField(
                 onSubmitted: (String value) {
                   search();
@@ -62,14 +61,13 @@ class _PlaylistsPageState extends State<PlaylistsPage> {
                 ),
                 cursorColor: Colors.green[50],
                 decoration: InputDecoration(
-                  fillColor: bgLight,
                   filled: true,
-                  enabledBorder: const OutlineInputBorder(
-                    borderRadius: BorderRadius.all(
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: const BorderRadius.all(
                       Radius.circular(100),
                     ),
                     borderSide: BorderSide(
-                      color: Color(0xff263238),
+                      color: Theme.of(context).backgroundColor,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
@@ -190,12 +188,12 @@ class _PlaylistsPageState extends State<PlaylistsPage> {
 
 class GetPlaylist extends StatelessWidget {
   const GetPlaylist({
-    Key? key,
+    super.key,
     required this.index,
     required this.image,
     required this.title,
     required this.id,
-  }) : super(key: key);
+  });
   final int index;
   final dynamic image;
   final String title;
@@ -203,7 +201,7 @@ class GetPlaylist extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Size size = MediaQuery.of(context).size;
+    final size = MediaQuery.of(context).size;
     return DelayedDisplay(
       delay: const Duration(milliseconds: 200),
       fadingDuration: const Duration(milliseconds: 400),
@@ -228,46 +226,32 @@ class GetPlaylist extends StatelessWidget {
             child: Stack(
               alignment: Alignment.bottomLeft,
               children: [
-                DecoratedBox(
-                  decoration: const BoxDecoration(
-                    boxShadow: [
-                      BoxShadow(
-                        blurRadius: 6,
-                        color: Color.fromARGB(40, 0, 0, 0),
-                      )
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
-                    child: image != ''
-                        ? CachedNetworkImage(
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(15),
+                  child: image != ''
+                      ? CachedNetworkImage(
+                          width: size.width * 0.4,
+                          height: size.height * 0.18,
+                          imageUrl: image.toString(),
+                          fit: BoxFit.cover,
+                          errorWidget: (context, url, error) => SizedBox(
                             width: size.width * 0.4,
                             height: size.height * 0.18,
-                            imageUrl: image.toString(),
-                            fit: BoxFit.cover,
-                            errorWidget: (context, url, error) => DecoratedBox(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Color.fromARGB(30, 255, 255, 255),
-                                    Color.fromARGB(30, 233, 233, 233),
-                                  ],
-                                ),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: <Widget>[
-                                  Icon(
-                                    MdiIcons.musicNoteOutline,
-                                    size: 30,
-                                    color: accent,
-                                  ),
-                                ],
-                              ),
+                            child: Icon(
+                              MdiIcons.musicNoteOutline,
+                              size: 30,
+                              color: accent,
                             ),
-                          )
-                        : Center(
+                          ),
+                        )
+                      : Container(
+                          width: 200,
+                          height: 200,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            color: Theme.of(context).backgroundColor,
+                          ),
+                          child: Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: <Widget>[
@@ -284,7 +268,7 @@ class GetPlaylist extends StatelessWidget {
                               ],
                             ),
                           ),
-                  ),
+                        ),
                 ),
                 Positioned.fill(
                   child: Container(
@@ -292,18 +276,7 @@ class GetPlaylist extends StatelessWidget {
                     height: size.height * 0.18,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(15),
-                      gradient: LinearGradient(
-                        colors: const [
-                          Color.fromARGB(30, 255, 255, 255),
-                          Color.fromARGB(30, 233, 233, 233),
-                        ],
-                        begin: index.isOdd
-                            ? Alignment.bottomCenter
-                            : Alignment.topCenter,
-                        end: index.isOdd
-                            ? Alignment.topCenter
-                            : Alignment.bottomCenter,
-                      ),
+                      color: const Color.fromARGB(30, 255, 255, 255),
                     ),
                   ),
                 ),

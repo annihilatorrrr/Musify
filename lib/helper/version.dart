@@ -2,14 +2,16 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_downloader/flutter_downloader.dart';
+import 'package:musify/main.dart';
 import 'package:musify/services/ext_storage.dart';
 
-late String version;
+String? version;
 late String dlUrl;
 const apiUrl =
     'https://raw.githubusercontent.com/gokadzev/Musify/update/check.json';
 
 Future<bool> checkAppUpdates() async {
+  version ??= packageInfo.version;
   final client = HttpClient();
   final request = await client.getUrl(Uri.parse(apiUrl));
   final response = await request.close();
@@ -33,9 +35,8 @@ Future<void> downloadAppUpdates() async {
   } else {
     dlUrl = map['url'].toString();
   }
-  final String? dlPath =
-      await ExtStorageProvider.getExtStorage(dirName: 'Download');
-  final File file = File('${dlPath!}/Musify.apk');
+  final dlPath = await ExtStorageProvider.getExtStorage(dirName: 'Download');
+  final file = File('${dlPath!}/Musify.apk');
   if (await file.exists()) {
     await file.delete();
   }

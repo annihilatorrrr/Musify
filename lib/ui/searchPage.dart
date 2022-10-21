@@ -5,7 +5,7 @@ import 'package:musify/API/musify.dart';
 import 'package:musify/customWidgets/song_bar.dart';
 import 'package:musify/customWidgets/spinner.dart';
 import 'package:musify/services/data_manager.dart';
-import 'package:musify/style/appColors.dart';
+import 'package:musify/style/appTheme.dart';
 
 class SearchPage extends StatefulWidget {
   @override
@@ -18,23 +18,18 @@ class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchBar = TextEditingController();
   final ValueNotifier<bool> _fetchingSongs = ValueNotifier(false);
   final FocusNode _inputNode = FocusNode();
+  String _searchQuery = '';
 
   Future<void> search() async {
-    final String searchQuery = _searchBar.text;
-    if (searchQuery.isEmpty) {
-      setState(() {
-        searchedList = [];
-      });
-      return;
+    _searchQuery = _searchBar.text;
+    if (_searchQuery.isNotEmpty) {
+      _fetchingSongs.value = true;
+      if (!searchHistory.contains(_searchQuery)) {
+        searchHistory.insert(0, _searchQuery);
+        addOrUpdateData('user', 'searchHistory', searchHistory);
+      }
+      _fetchingSongs.value = false;
     }
-
-    _fetchingSongs.value = true;
-    await fetchSongsList(searchQuery);
-    if (!searchHistory.contains(searchQuery)) {
-      searchHistory.insert(0, searchQuery);
-      addOrUpdateData('user', 'searchHistory', searchHistory);
-    }
-    _fetchingSongs.value = false;
     setState(() {});
   }
 
@@ -54,96 +49,89 @@ class _SearchPageState extends State<SearchPage> {
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(12),
         child: Column(
           children: <Widget>[
-            const Padding(padding: EdgeInsets.only(bottom: 20)),
-            TextField(
-              onSubmitted: (String value) {
-                search();
-                FocusManager.instance.primaryFocus?.unfocus();
-              },
-              controller: _searchBar,
-              focusNode: _inputNode,
-              style: TextStyle(
-                fontSize: 16,
-                color: accent,
+            Padding(
+              padding: const EdgeInsets.only(
+                top: 12,
+                bottom: 20,
+                left: 12,
+                right: 12,
               ),
-              cursorColor: Colors.green[50],
-              decoration: InputDecoration(
-                fillColor: bgLight,
-                filled: true,
-                enabledBorder: const OutlineInputBorder(
-                  borderRadius: BorderRadius.all(
-                    Radius.circular(100),
-                  ),
-                  borderSide: BorderSide(
-                    color: Color(0xff263238),
-                  ),
+              child: TextField(
+                onSubmitted: (String value) {
+                  search();
+                  FocusManager.instance.primaryFocus?.unfocus();
+                },
+                controller: _searchBar,
+                focusNode: _inputNode,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: accent,
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: const BorderRadius.all(
-                    Radius.circular(100),
+                cursorColor: Colors.green[50],
+                decoration: InputDecoration(
+                  filled: true,
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: const BorderRadius.all(
+                      Radius.circular(100),
+                    ),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).backgroundColor,
+                    ),
                   ),
-                  borderSide: BorderSide(color: accent),
-                ),
-                suffixIcon: ValueListenableBuilder<bool>(
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: const BorderRadius.all(
+                      Radius.circular(100),
+                    ),
+                    borderSide: BorderSide(color: accent),
+                  ),
+                  suffixIcon: ValueListenableBuilder<bool>(
                     valueListenable: _fetchingSongs,
                     builder: (_, value, __) {
                       if (value == true) {
                         return IconButton(
-                            icon: const SizedBox(
-                                height: 18, width: 18, child: Spinner()),
-                            color: accent,
-                            onPressed: () {
-                              search();
-                              FocusManager.instance.primaryFocus?.unfocus();
-                            });
+                          icon: const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: Spinner(),
+                          ),
+                          color: accent,
+                          onPressed: () {
+                            search();
+                            FocusManager.instance.primaryFocus?.unfocus();
+                          },
+                        );
                       } else {
                         return IconButton(
-                            icon: Icon(
-                              Icons.search,
-                              color: accent,
-                            ),
+                          icon: Icon(
+                            Icons.search,
                             color: accent,
-                            onPressed: () {
-                              search();
-                              FocusManager.instance.primaryFocus?.unfocus();
-                            });
+                          ),
+                          color: accent,
+                          onPressed: () {
+                            search();
+                            FocusManager.instance.primaryFocus?.unfocus();
+                          },
+                        );
                       }
-                    }),
-                border: InputBorder.none,
-                hintText: '${AppLocalizations.of(context)!.search}...',
-                hintStyle: TextStyle(
-                  color: accent,
-                ),
-                contentPadding: const EdgeInsets.only(
-                  left: 18,
-                  right: 20,
-                  top: 14,
-                  bottom: 14,
+                    },
+                  ),
+                  border: InputBorder.none,
+                  hintText: '${AppLocalizations.of(context)!.search}...',
+                  hintStyle: TextStyle(
+                    color: accent,
+                  ),
+                  contentPadding: const EdgeInsets.only(
+                    left: 18,
+                    right: 20,
+                    top: 14,
+                    bottom: 14,
+                  ),
                 ),
               ),
             ),
-            const Padding(padding: EdgeInsets.only(top: 20)),
-            if (searchedList.isNotEmpty)
-              ListView.builder(
-                shrinkWrap: true,
-                addAutomaticKeepAlives: false,
-                addRepaintBoundaries: false,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: searchedList.length,
-                itemBuilder: (BuildContext ctxt, int index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 5, bottom: 5),
-                    child: SongBar(
-                      searchedList[index],
-                      false,
-                    ),
-                  );
-                },
-              )
-            else if (searchedList.isEmpty && searchHistory.isNotEmpty)
+            if (_searchQuery.isEmpty)
               ListView.builder(
                 shrinkWrap: true,
                 addAutomaticKeepAlives: false,
@@ -154,11 +142,6 @@ class _SearchPageState extends State<SearchPage> {
                   return Padding(
                     padding: const EdgeInsets.only(top: 8, bottom: 6),
                     child: Card(
-                      color: bgLight,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 2.3,
                       child: ListTile(
                         leading: Icon(Icons.search, color: accent),
                         title: Text(
@@ -167,6 +150,7 @@ class _SearchPageState extends State<SearchPage> {
                         ),
                         onTap: () async {
                           _fetchingSongs.value = true;
+                          _searchQuery = searchHistory[index];
                           await fetchSongsList(searchHistory[index]);
                           _fetchingSongs.value = false;
                           setState(() {});
@@ -174,6 +158,30 @@ class _SearchPageState extends State<SearchPage> {
                       ),
                     ),
                   );
+                },
+              )
+            else
+              FutureBuilder(
+                future: fetchSongsList(_searchQuery),
+                builder: (context, data) {
+                  return (data as dynamic).data != null
+                      ? ListView.builder(
+                          shrinkWrap: true,
+                          addAutomaticKeepAlives: false,
+                          addRepaintBoundaries: false,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: (data as dynamic).data.length,
+                          itemBuilder: (BuildContext ctxt, int index) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 5, bottom: 5),
+                              child: SongBar(
+                                (data as dynamic).data[index],
+                                false,
+                              ),
+                            );
+                          },
+                        )
+                      : const Spinner();
                 },
               )
           ],

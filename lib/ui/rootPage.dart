@@ -1,20 +1,19 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:musify/API/musify.dart';
 import 'package:musify/customWidgets/custom_animated_bottom_bar.dart';
+import 'package:musify/helper/flutter_toast.dart';
 import 'package:musify/helper/version.dart';
+import 'package:musify/main.dart';
 import 'package:musify/services/audio_manager.dart';
-import 'package:musify/style/appColors.dart';
+import 'package:musify/style/appTheme.dart';
 import 'package:musify/ui/homePage.dart';
-import 'package:musify/ui/localSongsPage.dart';
+import 'package:musify/ui/morePage.dart';
 import 'package:musify/ui/player.dart';
 import 'package:musify/ui/playlistsPage.dart';
 import 'package:musify/ui/searchPage.dart';
-import 'package:musify/ui/settingsPage.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 
 class Musify extends StatefulWidget {
@@ -30,41 +29,16 @@ class AppState extends State<Musify> {
   @override
   void initState() {
     super.initState();
-    initAudioPlayer();
     checkAppUpdates().then(
       (value) => {
         if (value == true)
           {
-            Fluttertoast.showToast(
-              msg: '${AppLocalizations.of(context)!.appUpdateIsAvailable}!',
-              toastLength: Toast.LENGTH_SHORT,
-              gravity: ToastGravity.BOTTOM,
-              backgroundColor: accent,
-              textColor: accent != const Color(0xFFFFFFFF)
-                  ? Colors.white
-                  : Colors.black,
-              fontSize: 14,
-            )
+            showToast(
+              '${AppLocalizations.of(context)!.appUpdateIsAvailable}!',
+            ),
           }
       },
     );
-  }
-
-  void initAudioPlayer() {
-    audioPlayer!.processingStateStream.listen((state) async {
-      if (state == ProcessingState.completed) {
-        await pause();
-        await audioPlayer!.seek(Duration.zero);
-        if (hasNext) {
-          if (activePlaylist.isEmpty && playNextSongAutomatically.value) {
-            await playSong(await getRandomSong());
-          } else {
-            await playSong(activePlaylist[id + 1]);
-            id = id + 1;
-          }
-        }
-      }
-    });
   }
 
   @override
@@ -73,8 +47,7 @@ class AppState extends State<Musify> {
       HomePage(),
       SearchPage(),
       PlaylistsPage(),
-      LocalSongsPage(),
-      SettingsPage(),
+      MorePage(),
     ];
     return Scaffold(
       bottomNavigationBar: getFooter(),
@@ -88,41 +61,42 @@ class AppState extends State<Musify> {
   }
 
   Widget getFooter() {
-    final List<BottomNavBarItem> items = [
+    final items = <BottomNavBarItem>[
       BottomNavBarItem(
-        icon: const Icon(MdiIcons.homeOutline),
-        activeIcon: const Icon(MdiIcons.home),
-        title: const Text('Home'),
-        activeColor: accent,
-        inactiveColor: Colors.white,
+        icon: const Icon(MdiIcons.home),
+        title: Text(
+          AppLocalizations.of(context)!.home,
+          maxLines: 1,
+        ),
+        activeColor: themeMode == ThemeMode.light ? accent.shade900 : accent,
+        inactiveColor: Theme.of(context).hintColor,
       ),
       BottomNavBarItem(
-        icon: const Icon(MdiIcons.magnifyMinusOutline),
-        activeIcon: const Icon(MdiIcons.magnify),
-        title: const Text('Search'),
-        activeColor: accent,
-        inactiveColor: Colors.white,
+        icon: const Icon(MdiIcons.magnify),
+        title: Text(
+          AppLocalizations.of(context)!.search,
+          maxLines: 1,
+        ),
+        activeColor: themeMode == ThemeMode.light ? accent.shade900 : accent,
+        inactiveColor: Theme.of(context).hintColor,
       ),
       BottomNavBarItem(
-        icon: const Icon(MdiIcons.bookOutline),
-        activeIcon: const Icon(MdiIcons.book),
-        title: const Text('Playlists'),
-        activeColor: accent,
-        inactiveColor: Colors.white,
+        icon: const Icon(MdiIcons.book),
+        title: Text(
+          AppLocalizations.of(context)!.playlists,
+          maxLines: 1,
+        ),
+        activeColor: themeMode == ThemeMode.light ? accent.shade900 : accent,
+        inactiveColor: Theme.of(context).hintColor,
       ),
       BottomNavBarItem(
-        icon: const Icon(MdiIcons.downloadOutline),
-        activeIcon: const Icon(MdiIcons.download),
-        title: const Text('Local Songs'),
-        activeColor: accent,
-        inactiveColor: Colors.white,
-      ),
-      BottomNavBarItem(
-        icon: const Icon(MdiIcons.cogOutline),
-        activeIcon: const Icon(MdiIcons.cog),
-        title: const Text('Settings'),
-        activeColor: accent,
-        inactiveColor: Colors.white,
+        icon: const Icon(MdiIcons.dotsHorizontal),
+        title: Text(
+          AppLocalizations.of(context)!.more,
+          maxLines: 1,
+        ),
+        activeColor: themeMode == ThemeMode.light ? accent.shade900 : accent,
+        inactiveColor: Theme.of(context).hintColor,
       )
     ];
 
@@ -130,7 +104,7 @@ class AppState extends State<Musify> {
       mainAxisSize: MainAxisSize.min,
       children: [
         StreamBuilder<SequenceState?>(
-          stream: audioPlayer!.sequenceStateStream,
+          stream: audioPlayer.sequenceStateStream,
           builder: (context, snapshot) {
             final state = snapshot.data;
             if (state?.sequence.isEmpty ?? true) {
@@ -139,12 +113,11 @@ class AppState extends State<Musify> {
             final metadata = state!.currentSource!.tag;
             return Container(
               height: 75,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(
+              decoration: const BoxDecoration(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(18),
                   topRight: Radius.circular(18),
                 ),
-                color: bgLight,
               ),
               child: Padding(
                 padding: const EdgeInsets.only(top: 5, bottom: 2),
@@ -178,6 +151,9 @@ class AppState extends State<Musify> {
                                 id: metadata.extras['localSongId'] as int,
                                 type: ArtworkType.AUDIO,
                                 artworkBorder: BorderRadius.circular(8),
+                                artworkWidth: 60,
+                                artworkHeight: 60,
+                                artworkFit: BoxFit.cover,
                                 nullArtworkWidget: Icon(
                                   MdiIcons.musicNoteOutline,
                                   size: 30,
@@ -189,18 +165,19 @@ class AppState extends State<Musify> {
                                 borderRadius: BorderRadius.circular(8),
                                 child: CachedNetworkImage(
                                   imageUrl: metadata!.artUri.toString(),
-                                  fit: BoxFit.fill,
+                                  fit: BoxFit.cover,
+                                  width: 60,
+                                  height: 60,
                                   errorWidget: (context, url, error) =>
                                       Container(
                                     width: 50,
                                     height: 50,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10),
-                                      gradient: const LinearGradient(
-                                        colors: [
-                                          Color.fromARGB(30, 255, 255, 255),
-                                          Color.fromARGB(30, 233, 233, 233),
-                                        ],
+                                    decoration: const BoxDecoration(
+                                      color: Color.fromARGB(
+                                        30,
+                                        255,
+                                        255,
+                                        255,
                                       ),
                                     ),
                                     child: Column(
@@ -218,45 +195,41 @@ class AppState extends State<Musify> {
                                 ),
                               ),
                       ),
-                      Padding(
-                        padding: EdgeInsets.zero,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: <Widget>[
-                            Text(
-                              metadata!.title.toString().length > 15
-                                  ? '${metadata!.title.toString().substring(0, 15)}...'
-                                  : metadata!.title.toString(),
-                              style: TextStyle(
-                                color: accent,
-                                fontSize: 17,
-                                fontWeight: FontWeight.w600,
-                              ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Text(
+                            metadata!.title.toString().length > 15
+                                ? '${metadata!.title.toString().substring(0, 15)}...'
+                                : metadata!.title.toString(),
+                            style: TextStyle(
+                              color: accent,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
                             ),
-                            Text(
-                              metadata!.artist.toString().length > 15
-                                  ? '${metadata!.artist.toString().substring(0, 15)}...'
-                                  : metadata!.artist.toString(),
-                              style: TextStyle(
-                                color: accent,
-                                fontSize: 15,
-                              ),
-                            )
-                          ],
-                        ),
+                          ),
+                          Text(
+                            metadata!.artist.toString().length > 15
+                                ? '${metadata!.artist.toString().substring(0, 15)}...'
+                                : metadata!.artist.toString(),
+                            style: TextStyle(
+                              color: accent,
+                              fontSize: 15,
+                            ),
+                          )
+                        ],
                       ),
                       const Spacer(),
                       Padding(
                         padding: const EdgeInsets.only(right: 8),
-                        child: StreamBuilder<PlayerState>(
-                          stream: audioPlayer!.playerStateStream,
-                          builder: (context, snapshot) {
-                            if (snapshot.hasData) {
-                              final playerState = snapshot.data;
-                              return _playerControllers(
-                                  playerState!, MediaQuery.of(context).size);
-                            } else {
+                        child: ValueListenableBuilder<PlayerState>(
+                          valueListenable: playerState,
+                          builder: (_, value, __) {
+                            if (value.processingState ==
+                                    ProcessingState.loading ||
+                                value.processingState ==
+                                    ProcessingState.buffering) {
                               return Container(
                                 margin: const EdgeInsets.all(8),
                                 width: MediaQuery.of(context).size.width * 0.08,
@@ -266,6 +239,31 @@ class AppState extends State<Musify> {
                                   valueColor:
                                       AlwaysStoppedAnimation<Color>(accent),
                                 ),
+                              );
+                            } else if (value.playing != true) {
+                              return IconButton(
+                                icon: Icon(MdiIcons.play, color: accent),
+                                iconSize: 45,
+                                onPressed: play,
+                                splashColor: Colors.transparent,
+                              );
+                            } else if (value.processingState !=
+                                ProcessingState.completed) {
+                              return IconButton(
+                                icon: Icon(MdiIcons.pause, color: accent),
+                                iconSize: 45,
+                                onPressed: pause,
+                                splashColor: Colors.transparent,
+                              );
+                            } else {
+                              return IconButton(
+                                icon: Icon(MdiIcons.replay, color: accent),
+                                iconSize: 45,
+                                onPressed: () => audioPlayer.seek(
+                                  Duration.zero,
+                                  index: audioPlayer.effectiveIndices!.first,
+                                ),
+                                splashColor: Colors.transparent,
                               );
                             }
                           },
@@ -278,58 +276,23 @@ class AppState extends State<Musify> {
             );
           },
         ),
-        _buildBottomBar(items),
+        _buildBottomBar(context, items),
       ],
     );
   }
 
-  Widget _buildBottomBar(List<BottomNavBarItem> items) {
+  Widget _buildBottomBar(BuildContext context, List<BottomNavBarItem> items) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 100),
       height: 65,
       child: CustomAnimatedBottomBar(
-        backgroundColor: bgLight,
-        onTap: (index) => activeTab.value = index,
+        backgroundColor: Theme.of(context).bottomAppBarColor,
+        selectedIndex: activeTab.value,
+        onItemSelected: (index) => setState(() {
+          activeTab.value = index;
+        }),
         items: items,
-        margin: const EdgeInsets.only(left: 8, right: 8),
       ),
     );
-  }
-
-  Widget _playerControllers(PlayerState playerState, Size size) {
-    final processingState = playerState.processingState;
-    if (processingState == ProcessingState.loading ||
-        processingState == ProcessingState.buffering) {
-      return Container(
-        margin: const EdgeInsets.all(8),
-        width: size.width * 0.08,
-        height: size.width * 0.08,
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(accent),
-        ),
-      );
-    } else if (audioPlayer!.playing != true) {
-      return IconButton(
-        icon: Icon(MdiIcons.play, color: accent),
-        iconSize: 45,
-        onPressed: play,
-        splashColor: Colors.transparent,
-      );
-    } else if (processingState != ProcessingState.completed) {
-      return IconButton(
-        icon: Icon(MdiIcons.pause, color: accent),
-        iconSize: 45,
-        onPressed: pause,
-        splashColor: Colors.transparent,
-      );
-    } else {
-      return IconButton(
-        icon: Icon(MdiIcons.replay, color: accent),
-        iconSize: 45,
-        onPressed: () => audioPlayer!
-            .seek(Duration.zero, index: audioPlayer!.effectiveIndices!.first),
-        splashColor: Colors.transparent,
-      );
-    }
   }
 }

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:musify/helper/url_launcher.dart';
 import 'package:musify/helper/version.dart';
-import 'package:musify/style/appColors.dart';
+import 'package:musify/style/appTheme.dart';
 
 class AboutPage extends StatelessWidget {
-  const AboutPage({Key? key}) : super(key: key);
+  const AboutPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +37,7 @@ class AboutPage extends StatelessWidget {
 }
 
 class AboutCards extends StatelessWidget {
-  const AboutCards({Key? key}) : super(key: key);
+  const AboutCards({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -73,11 +75,6 @@ class AboutCards extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(top: 8, left: 8, right: 8, bottom: 6),
           child: Card(
-            color: bgLight,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            elevation: 2.3,
             child: ListTile(
               leading: Container(
                 height: 50,
@@ -92,13 +89,25 @@ class AboutCards extends StatelessWidget {
                   ),
                 ),
               ),
-              title: Text(
+              title: const Text(
                 'Valeri Gokadze',
-                style: TextStyle(color: accent),
               ),
-              subtitle: Text(
+              subtitle: const Text(
                 'Web/APP Developer',
-                style: TextStyle(color: accentLight),
+              ),
+              trailing: Wrap(
+                children: <Widget>[
+                  IconButton(
+                    icon: Icon(
+                      MdiIcons.github,
+                      color: accent,
+                    ),
+                    tooltip: 'Github',
+                    onPressed: () {
+                      launchURL(Uri.parse('https://github.com/gokadzev'));
+                    },
+                  ),
+                ],
               ),
             ),
           ),

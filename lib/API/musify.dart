@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:musify/helper/formatter.dart';
@@ -12,6 +13,7 @@ import 'package:musify/services/audio_handler.dart';
 import 'package:musify/services/audio_manager.dart';
 import 'package:musify/services/data_manager.dart';
 import 'package:musify/services/ext_storage.dart';
+import 'package:musify/services/lyrics_service.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
@@ -19,25 +21,23 @@ import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 final yt = YoutubeExplode();
 final OnAudioQuery _audioQuery = OnAudioQuery();
 
-List ytplaylists = [];
-List searchedList = [];
+final random = Random();
+
 List playlists = [];
 List userPlaylists = Hive.box('user').get('playlists', defaultValue: []);
 List userLikedSongsList = Hive.box('user').get('likedSongs', defaultValue: []);
 List suggestedPlaylists = [];
 List activePlaylist = [];
-List<SongModel> localSongs = [];
 
 final lyrics = ValueNotifier<String>('null');
-String _lastLyricsUrl = '';
+String lastFetchedLyrics = 'null';
 
 int id = 0;
 
 Future<List> fetchSongsList(String searchQuery) async {
   final List list = await yt.search.search(searchQuery);
-  searchedList = [];
-  for (final s in list) {
-    searchedList.add(
+  final searchedList = [
+    for (final s in list)
       returnSongLayout(
         0,
         s.id.toString(),
@@ -48,9 +48,9 @@ Future<List> fetchSongsList(String searchQuery) async {
         s.thumbnails.lowResUrl.toString(),
         s.thumbnails.maxResUrl.toString(),
         s.title.split('-')[0].toString(),
-      ),
-    );
-  }
+      )
+  ];
+
   return searchedList;
 }
 
@@ -58,7 +58,7 @@ Future get10Music(dynamic playlistid) async {
   final List playlistSongs =
       await getData('cache', 'playlist10Songs$playlistid') ?? [];
   if (playlistSongs.isEmpty) {
-    int index = 0;
+    var index = 0;
     await for (final song in yt.playlists.getVideos(playlistid).take(10)) {
       playlistSongs.add(
         returnSongLayout(
@@ -101,9 +101,14 @@ Future<List<dynamic>> getUserPlaylists() async {
   return playlistsByUser;
 }
 
-void addUserPlaylist(String playlistId) {
-  userPlaylists.add(playlistId);
-  addOrUpdateData('user', 'playlists', userPlaylists);
+String addUserPlaylist(String playlistId, BuildContext context) {
+  if (playlistId.length != 34) {
+    return '${AppLocalizations.of(context)!.notYTlist}!';
+  } else {
+    userPlaylists.add(playlistId);
+    addOrUpdateData('user', 'playlists', userPlaylists);
+    return '${AppLocalizations.of(context)!.addedSuccess}!';
+  }
 }
 
 void removeUserPlaylist(String playlistId) {
@@ -154,47 +159,25 @@ Future<List> searchPlaylist(String query) async {
   }
 
   return playlists
-      .where((playlist) =>
-          playlist['title'].toLowerCase().contains(query.toLowerCase()))
+      .where(
+        (playlist) =>
+            playlist['title'].toLowerCase().contains(query.toLowerCase()),
+      )
       .toList();
 }
 
 Future<Map> getRandomSong() async {
-  if (playlists.isEmpty) {
-    playlists =
-        json.decode(await rootBundle.loadString('assets/db/playlists.db.json'))
-            as List;
-  }
-  final random = Random();
-  final playlistId = playlists[random.nextInt(playlists.length)]['ytid'];
-  final playlistSongs =
-      await getData('cache', 'playlistSongs$playlistId') ?? [];
+  const playlistId = 'PLgzTt0k8mXzEk586ze4BjvDXR7c-TUSnx';
+  final List playlistSongs = await getSongsFromPlaylist(playlistId);
 
-  if (playlistSongs.isEmpty) {
-    final songs = await yt.playlists.getVideos(playlistId).take(5).toList();
-    final choosedSong = songs[random.nextInt(playlistSongs.length)];
-
-    return returnSongLayout(
-      0,
-      choosedSong.id.toString(),
-      formatSongTitle(
-        choosedSong.title.split('-')[choosedSong.title.split('-').length - 1],
-      ),
-      choosedSong.thumbnails.standardResUrl,
-      choosedSong.thumbnails.lowResUrl,
-      choosedSong.thumbnails.maxResUrl,
-      choosedSong.title.split('-')[0],
-    );
-  } else {
-    return playlistSongs[random.nextInt(playlistSongs.length)];
-  }
+  return playlistSongs[random.nextInt(playlistSongs.length)];
 }
 
 Future getSongsFromPlaylist(dynamic playlistid) async {
   final List playlistSongs =
       await getData('cache', 'playlistSongs$playlistid') ?? [];
   if (playlistSongs.isEmpty) {
-    int index = 0;
+    var index = 0;
     await for (final song in yt.playlists.getVideos(playlistid)) {
       playlistSongs.add(
         returnSongLayout(
@@ -221,13 +204,13 @@ Future<void> setActivePlaylist(List plist) async {
   if (plist is List<SongModel>) {
     activePlaylist = [];
     id = 0;
-    final List<MediaItem> activeTempPlaylist = [];
-    for (final song in plist) {
-      activeTempPlaylist.add(songModelToMediaItem(song, song.data));
-    }
+    final activeTempPlaylist = <MediaItem>[
+      for (final song in plist) songModelToMediaItem(song, song.data)
+    ];
+
     await MyAudioHandler().addQueueItems(activeTempPlaylist);
 
-    await play();
+    play();
   } else {
     activePlaylist = plist;
     id = 0;
@@ -237,10 +220,12 @@ Future<void> setActivePlaylist(List plist) async {
 
 Future getPlaylistInfoForWidget(dynamic id) async {
   var searchPlaylist = playlists.where((list) => list['ytid'] == id).toList();
+  var isUserPlaylist = false;
 
   if (searchPlaylist.isEmpty) {
     final usPlaylists = await getUserPlaylists();
     searchPlaylist = usPlaylists.where((list) => list['ytid'] == id).toList();
+    isUserPlaylist = true;
   }
 
   final playlist = searchPlaylist[0];
@@ -248,19 +233,22 @@ Future getPlaylistInfoForWidget(dynamic id) async {
   if (playlist['list'].length == 0) {
     searchPlaylist[searchPlaylist.indexOf(playlist)]['list'] =
         await getSongsFromPlaylist(playlist['ytid']);
+    if (!isUserPlaylist) {
+      playlists[playlists.indexOf(playlist)]['list'] =
+          searchPlaylist[searchPlaylist.indexOf(playlist)]['list'];
+    }
   }
 
   return playlist;
 }
 
-Future<String> getSongUrl(dynamic songId) async {
+Future<dynamic> getSong(dynamic songId, bool geturl) async {
   final manifest = await yt.videos.streamsClient.getManifest(songId);
-  return manifest.audioOnly.withHighestBitrate().url.toString();
-}
-
-Future getSongStream(dynamic songId) async {
-  final manifest = await yt.videos.streamsClient.getManifest(songId);
-  return manifest.audioOnly.withHighestBitrate();
+  if (geturl) {
+    return manifest.audioOnly.withHighestBitrate().url.toString();
+  } else {
+    return manifest.audioOnly.withHighestBitrate();
+  }
 }
 
 Future getSongDetails(dynamic songIndex, dynamic songId) async {
@@ -277,51 +265,63 @@ Future getSongDetails(dynamic songIndex, dynamic songId) async {
 }
 
 Future<List<SongModel>> getLocalSongs() async {
-  // DEFAULT:
-  // SongSortType.TITLE,
-  // OrderType.ASC_OR_SMALLER,
-  // UriType.EXTERNAL,
-  if (localSongs.isEmpty) {
-    if (await Permission.storage.request().isGranted) {
-      localSongs = await _audioQuery.querySongs(uriType: UriType.EXTERNAL);
-      localSongs.addAll(await _audioQuery.querySongs(
-          path: await ExtStorageProvider.getExtStorage(dirName: 'Musify')));
-    }
+  var localSongs = <SongModel>[];
+  if (await ExtStorageProvider.requestPermission(Permission.storage)) {
+    localSongs = await _audioQuery.querySongs(
+      path: await ExtStorageProvider.getExtStorage(dirName: 'Music'),
+    );
   }
 
   return localSongs;
 }
 
-Future getSongLyrics(String artist, String title) async {
-  if (_lastLyricsUrl !=
-      'https://api.lyrics.ovh/v1/$artist/${title.split(" (")[0].split("|")[0].trim()}') {
-    if (await getData('cache',
-            'lyrics-https://api.lyrics.ovh/v1/$artist/${title.split(" (")[0].split("|")[0].trim()}') !=
-        null) {
-      lyrics.value = await getData('cache',
-          'lyrics-https://api.lyrics.ovh/v1/$artist/${title.split(" (")[0].split("|")[0].trim()}');
+Future<List<Map<String, int>>> getSkipSegments(String id) async {
+  try {
+    final res = await http.get(
+      Uri(
+        scheme: 'https',
+        host: 'sponsor.ajay.app',
+        path: '/api/skipSegments',
+        queryParameters: {
+          'videoID': id,
+          'category': [
+            'sponsor',
+            'selfpromo',
+            'interaction',
+            'intro',
+            'outro',
+            'music_offtopic'
+          ],
+          'actionType': 'skip'
+        },
+      ),
+    );
+    if (res.body != 'Not Found') {
+      final data = jsonDecode(res.body);
+      final segments = data.map((obj) {
+        return Map.castFrom<String, dynamic, String, int>({
+          'start': obj['segment'].first.toInt(),
+          'end': obj['segment'].last.toInt(),
+        });
+      }).toList();
+      return List.castFrom<dynamic, Map<String, int>>(segments);
     } else {
-      lyrics.value = 'null';
-      _lastLyricsUrl =
-          'https://api.lyrics.ovh/v1/$artist/${title.split(" (")[0].split("|")[0].trim()}';
-      final response = await http.get(
-        Uri.parse(_lastLyricsUrl),
-        headers: {'Accept': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final lyricsResponse = await json.decode(response.body);
-        if (lyricsResponse['lyrics'] != null) {
-          lyrics.value = lyricsResponse['lyrics'].toString();
-          addOrUpdateData('cache', 'lyrics-$_lastLyricsUrl',
-              lyricsResponse['lyrics'].toString());
-        } else {
-          lyrics.value = 'not found';
-        }
-      } else {
-        lyrics.value = 'not found';
-        throw Exception('Failed to load lyrics');
-      }
+      return [];
     }
+  } catch (e, stack) {
+    debugPrint('$e $stack');
+    return [];
   }
+}
+
+Future getSongLyrics(String artist, String title) async {
+  if (lastFetchedLyrics != '$artist - $title') {
+    lyrics.value = 'null';
+    final _lyrics = await Lyrics().getLyrics(artist: artist, track: title);
+    lyrics.value = _lyrics;
+    lastFetchedLyrics = '$artist - $title';
+    return _lyrics;
+  }
+
+  return lyrics.value;
 }
